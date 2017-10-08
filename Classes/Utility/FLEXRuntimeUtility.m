@@ -394,12 +394,19 @@ const unsigned int kFLEXNumberOfImplicitArgs = 2;
     } @catch (NSException *exception) {
         // Bummer...
         if (error) {
-            NSString *format = @"Exception thrown while performing selector %@ on object %@";
-            NSString *description = [NSString stringWithFormat:format, NSStringFromSelector(selector), object];
-            NSDictionary *userInfo = @{NSLocalizedDescriptionKey: description};
+            // "… on <class>" / "… on instance of <class>"
+            NSString *class = NSStringFromClass([object class]);
+            NSString *calledOn = object == [object class] ? class : [@"an instance of " stringByAppendingString:class];
+
+            NSString *message = [NSString stringWithFormat:@"Exception '%@' thrown while performing selector '%@' on %@.\nReason:\n\n%@",
+                                 exception.name,
+                                 NSStringFromSelector(selector),
+                                 calledOn,
+                                 exception.reason];
+
             *error = [NSError errorWithDomain:FLEXRuntimeUtilityErrorDomain
                                          code:FLEXRuntimeUtilityErrorCodeInvocationFailed
-                                     userInfo:userInfo];
+                                     userInfo:@{ NSLocalizedDescriptionKey : message }];
         }
     }
     
